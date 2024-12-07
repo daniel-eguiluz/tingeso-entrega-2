@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: ms-simulacion
+    # student-service
+  cloud:
+    config:
+      enabled: true
+      uri: http://localhost:8081
+  datasource:
+    # url: jdbc:mysql://localhost:3306/bdmicros
+    # username: root
+    # password: Chile&2022
+    url: jdbc:postgresql://localhost:5432/db-simulacion
+    username: postgres
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
