@@ -6,7 +6,8 @@ spring:
       server:
         git:
           default-label: main
-          uri: https://github.com/amigo1975/microsevices-data-project
+          uri: https://github.com/daniel-eguiluz/tingeso-entrega-2
+          # uri: https://github.com/amigo1975/microsevices-data-project
           search-paths: config-data
   application:
     name: config-service

@@ -29,3 +29,33 @@ spring:
           uri: lb://pet-service
           predicates:
             - Path=/pet/**
+
+        - id: lb://ms-costos
+          uri: lb://ms-costos
+          predicates:
+            - Path=/costos/**
+
+        - id: lb://ms-seguimiento
+          uri: lb://ms-seguimiento
+          predicates:
+            - Path=/seguimiento/**
+
+        - id: lb://ms-simulacion
+          uri: lb://ms-simulacion
+          predicates:
+            - Path=/simulacion/**
+
+        - id: lb://ms-solicitud
+          uri: lb://ms-solicitud
+          predicates:
+            - Path=/solicitud/**
+        
+        - id: lb://ms-usuario
+          uri: lb://ms-usuario
+          predicates:
+            - Path=/usuario/**
+
+        - id: lb://ms-evaluacion
+          uri: lb://ms-evaluacion
+          predicates:
+            - Path=/evaluacion/**

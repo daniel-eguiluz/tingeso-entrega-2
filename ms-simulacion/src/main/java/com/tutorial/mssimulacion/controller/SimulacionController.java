@@ -16,29 +16,21 @@ public class SimulacionController {
     @Autowired
     SimulacionService simulacionService;
 
+    @PostMapping
+    public ResponseEntity<SimulacionEntity> simular(@RequestBody Map<String,Object> req) {
+        try {
+            Long idUsuario = ((Number)req.get("idUsuario")).longValue();
+            Long idPrestamo = ((Number)req.get("idPrestamo")).longValue();
+            SimulacionEntity sim = simulacionService.simular(idUsuario, idPrestamo);
+            return ResponseEntity.ok(sim);
+        } catch(Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<SimulacionEntity>> getAll() {
-        List<SimulacionEntity> simulaciones = simulacionService.getAll();
-        if(simulaciones.isEmpty())
-            return ResponseEntity.noContent().build();
-        return ResponseEntity.ok(simulaciones);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<SimulacionEntity> getById(@PathVariable("id") int id) {
-        SimulacionEntity simulacion = simulacionService.getSimulacionById(id);
-        if(simulacion == null)
-            return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(simulacion);
-    }
-
-    @PostMapping
-    public ResponseEntity<SimulacionEntity> save(@RequestBody Map<String, Object> request) {
-        double monto = ((Number)request.get("monto")).doubleValue();
-        int plazo = ((Number)request.get("plazo")).intValue();
-        double tasaInteresAnual = ((Number)request.get("tasaInteresAnual")).doubleValue();
-
-        SimulacionEntity simulacionNueva = simulacionService.save(monto, plazo, tasaInteresAnual);
-        return ResponseEntity.ok(simulacionNueva);
+        return ResponseEntity.ok(simulacionService.getAll());
     }
 }
+

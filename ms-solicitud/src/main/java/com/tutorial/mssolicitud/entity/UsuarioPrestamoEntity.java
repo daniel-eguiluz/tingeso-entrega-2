@@ -1,4 +1,4 @@
-package com.tutorial.mssimulacion.entity;
+package com.tutorial.mssolicitud.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,19 +7,20 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "simulacion")
+@Table(name = "usuario_prestamo")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SimulacionEntity {
+
+public class UsuarioPrestamoEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-    private Long idUsuario;
-    private Long idPrestamo;
-    private double cuotaMensual;
-    private double tasaInteresAnual;
-    private int plazo;
-    private double monto;
-}
+    @Column(unique = true, nullable = false, name = "id")
+    private Long id;
 
+    @Column(name = "id_usuario")
+    private Long idUsuario;
+
+    @Column(name = "id_prestamo")
+    private Long idPrestamo;
+}

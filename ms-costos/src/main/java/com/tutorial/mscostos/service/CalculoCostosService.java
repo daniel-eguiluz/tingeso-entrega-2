@@ -3,12 +3,20 @@ package com.tutorial.mscostos.service;
 import com.tutorial.mscostos.entity.CalculoCostosEntity;
 import com.tutorial.mscostos.repository.CalculoCostosRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CalculoCostosService {
+
+    @Autowired
+    @LoadBalanced
+    RestTemplate restTemplate;
 
     @Autowired
     CalculoCostosRepository calculoCostosRepository;
@@ -73,5 +81,17 @@ public class CalculoCostosService {
             return true;
         }
         return false;
+    }
+
+    public Map<String,Object> calcularCostoTotal(Long idSolicitud) throws Exception {
+        Map prestamo = restTemplate.getForObject("http://ms-solicitud-credito/solicitud/"+idSolicitud, Map.class);
+        if(prestamo == null) throw new Exception("Prestamo no encontrado");
+        double monto = ((Number)prestamo.get("monto")).doubleValue();
+        int plazo = ((Number)prestamo.get("plazo")).intValue();
+        double tasa = ((Number)prestamo.get("tasaInteres")).doubleValue();
+
+        // Calcular costos como se mostró antes
+        // ... retorna mapa con resultados
+        return new HashMap<>();
     }
 }

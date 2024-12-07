@@ -3,13 +3,21 @@ package com.tutorial.msseguimiento.service;
 import com.tutorial.msseguimiento.entity.SeguimientoEntity;
 import com.tutorial.msseguimiento.repository.SeguimientoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class SeguimientoService {
+
+    @Autowired
+    @LoadBalanced
+    RestTemplate restTemplate;
 
     @Autowired
     SeguimientoRepository seguimientoRepository;
@@ -44,5 +52,13 @@ public class SeguimientoService {
             return true;
         }
         return false;
+    }
+
+    public Map<String,Object> obtenerEstado(Long idSolicitud) {
+        Map prestamo = restTemplate.getForObject("http://ms-solicitud-credito/solicitud/"+idSolicitud, Map.class);
+        if(prestamo == null) return null;
+        Map<String,Object> resp = new HashMap<>();
+        resp.put("estado", prestamo.get("estado"));
+        return resp;
     }
 }
