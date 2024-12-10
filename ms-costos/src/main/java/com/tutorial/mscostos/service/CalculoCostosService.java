@@ -29,37 +29,50 @@ public class CalculoCostosService {
         return calculoCostosRepository.findById(id).orElse(null);
     }
 
-    public List<CalculoCostosEntity> getBySolicitudId(int idSolicitud) {
-        return calculoCostosRepository.findByIdSolicitud(idSolicitud);
+    public List<CalculoCostosEntity> getByUsuarioId(Long idUsuario) {
+        return calculoCostosRepository.findByIdUsuario(idUsuario);
     }
 
-    public CalculoCostosEntity calcularYGuardarCostos(int idSolicitud, double montoPrestamo, int plazoAnios, double tasaInteresAnual) {
-        // Cálculo de cuota mensual
-        double tasaMensual = (tasaInteresAnual / 100.0) / 12.0;
-        int numeroPagos = plazoAnios * 12;
-        double cuotaMensual = (montoPrestamo * tasaMensual * Math.pow(1 + tasaMensual, numeroPagos))
+    /**
+     * Obtiene datos del préstamo asociando el idUsuario a través de ms-solicitud.
+     * Se asume que ms-solicitud tiene un endpoint:
+     * GET http://ms-solicitud/solicitud/usuario/{idUsuario}
+     * que retorna un JSON con al menos: "monto", "plazo" y "tasaInteres".
+     */
+    public Map<String,Object> calcularCostos(Long idUsuario) throws Exception {
+        // Obtener datos del préstamo desde ms-solicitud
+        Map prestamo = restTemplate.getForObject("http://ms-solicitud/solicitud/usuario/" + idUsuario, Map.class);
+        if(prestamo == null) throw new Exception("No se encontraron datos de préstamo para el usuario " + idUsuario);
+
+        double monto = ((Number)prestamo.get("monto")).doubleValue();
+        int plazo = ((Number)prestamo.get("plazo")).intValue();
+        double tasa = ((Number)prestamo.get("tasaInteres")).doubleValue();
+
+        // Cálculo de costos
+        double tasaMensual = (tasa / 100.0) / 12.0;
+        int numeroPagos = plazo * 12;
+        double cuotaMensual = (monto * tasaMensual * Math.pow(1 + tasaMensual, numeroPagos))
                 / (Math.pow(1 + tasaMensual, numeroPagos) - 1);
 
-        // Cálculo de seguros y comisión (ejemplo fijo)
-        double seguroDesgravamenMensual = montoPrestamo * 0.0003; // 0.03% del monto
-        double seguroIncendioMensual = 20000.0; // valor fijo, ejemplo
-        double comisionAdministracion = montoPrestamo * 0.01; // 1% del monto del préstamo
-
+        double seguroDesgravamenMensual = monto * 0.0003;
+        double seguroIncendioMensual = 20000.0;
+        double comisionAdministracion = monto * 0.01;
         double costoMensualTotal = cuotaMensual + seguroDesgravamenMensual + seguroIncendioMensual;
         double costoTotal = (costoMensualTotal * numeroPagos) + comisionAdministracion;
 
-        // Redondear valores
+        // Redondear
         cuotaMensual = Math.round(cuotaMensual * 100.0) / 100.0;
         seguroDesgravamenMensual = Math.round(seguroDesgravamenMensual * 100.0) / 100.0;
         costoMensualTotal = Math.round(costoMensualTotal * 100.0) / 100.0;
         costoTotal = Math.round(costoTotal * 100.0) / 100.0;
         comisionAdministracion = Math.round(comisionAdministracion * 100.0) / 100.0;
 
+        // Guardar en base de datos
         CalculoCostosEntity c = new CalculoCostosEntity();
-        c.setIdSolicitud(idSolicitud);
-        c.setMontoPrestamo(montoPrestamo);
-        c.setPlazoAnios(plazoAnios);
-        c.setTasaInteresAnual(tasaInteresAnual);
+        c.setIdUsuario(idUsuario);
+        c.setMontoPrestamo(monto);
+        c.setPlazoAnios(plazo);
+        c.setTasaInteresAnual(tasa);
         c.setCuotaMensual(cuotaMensual);
         c.setSeguroDesgravamenMensual(seguroDesgravamenMensual);
         c.setSeguroIncendioMensual(seguroIncendioMensual);
@@ -68,7 +81,22 @@ public class CalculoCostosService {
         c.setCostoTotal(costoTotal);
         c.setNumeroPagos(numeroPagos);
 
-        return calculoCostosRepository.save(c);
+        calculoCostosRepository.save(c);
+
+        Map<String,Object> resultado = new HashMap<>();
+        resultado.put("seguroIncendioMensual", seguroIncendioMensual);
+        resultado.put("tasaInteresAnual", tasa);
+        resultado.put("montoPrestamo", monto);
+        resultado.put("costoTotal", costoTotal);
+        resultado.put("costoMensualTotal", costoMensualTotal);
+        resultado.put("plazoAnios", plazo);
+        resultado.put("numeroPagos", numeroPagos);
+        resultado.put("tasaInteresMensual", tasaMensual * 100);
+        resultado.put("cuotaMensual", cuotaMensual);
+        resultado.put("comisionAdministracion", comisionAdministracion);
+        resultado.put("seguroDesgravamenMensual", seguroDesgravamenMensual);
+
+        return resultado;
     }
 
     public CalculoCostosEntity update(CalculoCostosEntity calculo) {
@@ -81,17 +109,5 @@ public class CalculoCostosService {
             return true;
         }
         return false;
-    }
-
-    public Map<String,Object> calcularCostoTotal(Long idSolicitud) throws Exception {
-        Map prestamo = restTemplate.getForObject("http://ms-solicitud-credito/solicitud/"+idSolicitud, Map.class);
-        if(prestamo == null) throw new Exception("Prestamo no encontrado");
-        double monto = ((Number)prestamo.get("monto")).doubleValue();
-        int plazo = ((Number)prestamo.get("plazo")).intValue();
-        double tasa = ((Number)prestamo.get("tasaInteres")).doubleValue();
-
-        // Calcular costos como se mostró antes
-        // ... retorna mapa con resultados
-        return new HashMap<>();
     }
 }

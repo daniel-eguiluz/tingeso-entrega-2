@@ -7,6 +7,7 @@ import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,40 +15,44 @@ import java.util.Map;
 public class SimulacionService {
 
     @Autowired
-    SimulacionRepository simulacionRepository;
-
-    @Autowired
     @LoadBalanced
-    RestTemplate restTemplate; // Para llamar a otros MS
+    RestTemplate restTemplate;
 
-    public SimulacionEntity simular(Long idUsuario, Long idPrestamo) throws Exception {
-        // Llamar a ms-solicitud-credito para obtener datos del prestamo
-        Map prestamo = restTemplate.getForObject("http://ms-solicitud-credito/solicitud/"+idPrestamo, Map.class);
-        if(prestamo == null) {
-            throw new Exception("Prestamo no encontrado");
+    public Map<String,Object> simularCredito(Long idUsuario) throws Exception {
+        // Llamar a ms-solicitud para obtener datos del préstamo asociado a ese usuario
+        // Este endpoint debe devolver al menos: "monto", "plazo", "tasaInteres"
+        // Asegúrate que ms-solicitud en /solicitud/usuario/{idUsuario} devuelva también "idPrestamo" si lo necesitas
+        Map prestamo = restTemplate.getForObject("http://ms-solicitud/solicitud/usuario/" + idUsuario, Map.class);
+
+        if (prestamo == null) {
+            throw new Exception("No se encontraron datos del préstamo para el usuario " + idUsuario);
         }
 
-        double tasa = ((Number)prestamo.get("tasaInteres")).doubleValue();
-        int plazo = ((Number)prestamo.get("plazo")).intValue();
-        int monto = ((Number)prestamo.get("monto")).intValue();
+        double tasaInteresAnual = ((Number) prestamo.get("tasaInteres")).doubleValue();
+        int plazoEnAnios = ((Number) prestamo.get("plazo")).intValue();
+        int monto = ((Number) prestamo.get("monto")).intValue();
 
-        double tasaMensual = (tasa/100)/12;
-        int numeroPagos = plazo * 12;
-        double cuota = (monto * tasaMensual * Math.pow(1+tasaMensual, numeroPagos)) /
-                (Math.pow(1+tasaMensual, numeroPagos)-1);
+        // Cálculo de la tasa mensual
+        double tasaInteresMensual = (tasaInteresAnual / 12) / 100;
+        int numeroPagos = plazoEnAnios * 12;
 
-        SimulacionEntity s = new SimulacionEntity();
-        s.setIdUsuario(idUsuario);
-        s.setIdPrestamo(idPrestamo);
-        s.setMonto(monto);
-        s.setPlazo(plazo);
-        s.setTasaInteresAnual(tasa);
-        s.setCuotaMensual(Math.round(cuota*100.0)/100.0);
-        return simulacionRepository.save(s);
-    }
+        // Cálculo del pago mensual usando fórmula de amortización
+        double pagoMensual = (monto * tasaInteresMensual * Math.pow(1 + tasaInteresMensual, numeroPagos)) /
+                (Math.pow(1 + tasaInteresMensual, numeroPagos) - 1);
 
-    public List<SimulacionEntity> getAll() {
-        return simulacionRepository.findAll();
+        double totalPagos = pagoMensual * numeroPagos;
+        double interesesTotales = totalPagos - monto;
+
+        // Crear el JSON de respuesta simulando el del monolítico
+        Map<String,Object> simulacionResultado = new HashMap<>();
+        simulacionResultado.put("pagoMensual", pagoMensual);
+        simulacionResultado.put("monto", monto);
+        simulacionResultado.put("plazo", plazoEnAnios);
+        simulacionResultado.put("interesesTotales", interesesTotales);
+        simulacionResultado.put("tasaInteres", tasaInteresAnual);
+        simulacionResultado.put("totalPagos", totalPagos);
+
+        return simulacionResultado;
     }
 }
 

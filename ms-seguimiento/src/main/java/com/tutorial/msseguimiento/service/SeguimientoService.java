@@ -1,15 +1,10 @@
 package com.tutorial.msseguimiento.service;
 
-import com.tutorial.msseguimiento.entity.SeguimientoEntity;
-import com.tutorial.msseguimiento.repository.SeguimientoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -19,46 +14,19 @@ public class SeguimientoService {
     @LoadBalanced
     RestTemplate restTemplate;
 
-    @Autowired
-    SeguimientoRepository seguimientoRepository;
+    public Map<String,Object> obtenerDatosPrestamoPorUsuario(Long idUsuario) {
+        Map solicitud = restTemplate.getForObject("http://ms-solicitud/solicitud/usuario/" + idUsuario, Map.class);
+        if (solicitud == null) return null;
 
-    public List<SeguimientoEntity> getAll() {
-        return seguimientoRepository.findAll();
-    }
-
-    public SeguimientoEntity getById(int id) {
-        return seguimientoRepository.findById(id).orElse(null);
-    }
-
-    public List<SeguimientoEntity> getBySolicitudId(int idSolicitud) {
-        return seguimientoRepository.findByIdSolicitud(idSolicitud);
-    }
-
-    public SeguimientoEntity save(int idSolicitud, String estadoActual) {
-        SeguimientoEntity seg = new SeguimientoEntity();
-        seg.setIdSolicitud(idSolicitud);
-        seg.setEstadoActual(estadoActual);
-        seg.setFechaActualizacion(new Date());
-        return seguimientoRepository.save(seg);
-    }
-
-    public SeguimientoEntity update(SeguimientoEntity seguimiento) {
-        return seguimientoRepository.save(seguimiento);
-    }
-
-    public boolean deleteById(int id) {
-        if(seguimientoRepository.existsById(id)) {
-            seguimientoRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    public Map<String,Object> obtenerEstado(Long idSolicitud) {
-        Map prestamo = restTemplate.getForObject("http://ms-solicitud-credito/solicitud/"+idSolicitud, Map.class);
-        if(prestamo == null) return null;
         Map<String,Object> resp = new HashMap<>();
-        resp.put("estado", prestamo.get("estado"));
+        resp.put("id", solicitud.get("id"));
+        resp.put("tipo", solicitud.get("tipo"));              // ya no se usa "tipoPrestamo", es "tipo"
+        resp.put("plazo", solicitud.get("plazo"));
+        resp.put("tasaInteres", solicitud.get("tasaInteres")); // aquí usamos la misma clave que ms-solicitud
+        resp.put("monto", solicitud.get("monto"));
+        resp.put("estado", solicitud.get("estado"));
+        resp.put("valorPropiedad", solicitud.get("valorPropiedad"));
+
         return resp;
     }
 }

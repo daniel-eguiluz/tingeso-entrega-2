@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface CalculoCostosRepository extends JpaRepository<CalculoCostosEntity, Integer> {
-    List<CalculoCostosEntity> findByIdSolicitud(int idSolicitud);
+    List<CalculoCostosEntity> findByIdUsuario(Long idUsuario);
 }
-

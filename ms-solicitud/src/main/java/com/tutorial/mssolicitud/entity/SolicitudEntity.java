@@ -21,6 +21,9 @@ public class SolicitudEntity {
     @Column(name = "id_usuario")
     private int idUsuario;
 
+    @Column(name = "id_prestamo")
+    private Long idPrestamo;
+
     @Column(name = "tipo_prestamo")
     private String tipoPrestamo;
 

@@ -16,21 +16,15 @@ public class SimulacionController {
     @Autowired
     SimulacionService simulacionService;
 
-    @PostMapping
-    public ResponseEntity<SimulacionEntity> simular(@RequestBody Map<String,Object> req) {
+    // Cambiamos el endpoint a GET y la ruta para que quede como el monolítico:
+    @GetMapping("/{idUsuario}")
+    public ResponseEntity<Map<String,Object>> simularCredito(@PathVariable("idUsuario") Long idUsuario) {
         try {
-            Long idUsuario = ((Number)req.get("idUsuario")).longValue();
-            Long idPrestamo = ((Number)req.get("idPrestamo")).longValue();
-            SimulacionEntity sim = simulacionService.simular(idUsuario, idPrestamo);
-            return ResponseEntity.ok(sim);
-        } catch(Exception e) {
+            Map<String,Object> resultado = simulacionService.simularCredito(idUsuario);
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
     }
-
-    @GetMapping
-    public ResponseEntity<List<SimulacionEntity>> getAll() {
-        return ResponseEntity.ok(simulacionService.getAll());
-    }
 }
-
